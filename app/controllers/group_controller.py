@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify
+from ..models.group import Group
 
 group_controller = Blueprint('group', __name__)
 
 @group_controller.get('/groups')
 def get_groups():
+    groups = Group.query.all()
     return jsonify({'name': 'hello get'})
 
 @group_controller.post('/group')
