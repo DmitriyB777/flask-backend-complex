@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from config import Config
 from .extensions import db, migrate, jwt
 from .controllers.auth_controller import auth_controller
+from .controllers.group_controller import group_controller
 from .models.token_block_list import TokenBlockList
 
 def create_app():
@@ -22,6 +23,7 @@ def create_app():
 
     # add controllers
     app.register_blueprint(auth_controller, url_prefix='/api')
+    app.register_blueprint(group_controller, url_prefix='/api')
 
     # jwt error handlers
 
