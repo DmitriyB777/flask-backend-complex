@@ -8,6 +8,8 @@ product_controller = Blueprint('product', __name__)
 @product_controller.get('/products')
 @product_controller.get('/products/<int:group_id>')
 def get_products(group_id=None):
+    # need to add checking right of user
+
     if group_id is None:
         all_products = Product.query.all()
         return jsonify([{'id': p.id, 'name': p.name, 'group_id': p.group_id} for p in all_products])
