@@ -23,11 +23,23 @@ def get_products(group_id=None):
     sub_groups = Group.query.filter(Group.parent_id == group_id).all()
 
     data = {
-        'products': products,
-        'sub_groups': sub_groups
+        'products': [
+            {
+                'id': p.id,
+                'name': p.name,
+                'group_id': p.group_id
+            } for p in products
+        ],
+        'sub_groups': [
+            {
+                'id': g.id,
+                'name': g.name,
+                'parent_id': g.parent_id
+            } for g in sub_groups
+        ]
     }
 
-    if data:
+    if products or sub_groups:
         return jsonify(data)
     else:
         return jsonify({'message': 'No products or sub-groups found for this region'}), 404
@@ -76,6 +88,9 @@ def update_product(id):
         
         if 'group_id' in data:
             product.group_id = data['group_id']
+
+        if data['group_id'] is None:
+            return jsonify({"error": "Bad Request"}), 400
         
         db.session.commit()
 
