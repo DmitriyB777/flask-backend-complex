@@ -42,7 +42,7 @@ def add_group():
         parent = db.session.get(Group, data['parent_id'])
         
         # Parent group not found
-        if not parent:
+        if not parent and data['parent_id'] is not None:
             return jsonify({"error": "Not found"}), 404
 
         identity = get_jwt_identity()
@@ -57,6 +57,8 @@ def add_group():
         group = Group(name = data['name'], parent_id = data['parent_id'])
 
         db.session.add(group)
+
+        db.session.flush()
 
         rights = RightsUser(user_id = user.id, group_id = group.id)
 
@@ -112,7 +114,7 @@ def update_group(id):
             parent = db.session.get(Group, data['parent_id'])
 
             # Parent group not found
-            if not parent:
+            if not parent and data['parent_id'] is not None:
                 return jsonify({"error": "Not found"}), 404
 
             descendants = get_all_descendant_groups(id) 
@@ -156,14 +158,14 @@ def delete_group(id):
 
         groups_ids_to_remove = get_all_descendant_groups(group.id)
 
+        subquery = select(RightsUser.id).where(
+            RightsUser.user_id == user.id, 
+            RightsUser.group_id == Group.id
+        )
+
         query = select(Group.id).where(
             Group.id.in_(groups_ids_to_remove),
-            ~exists().where(
-                select(RightsUser.id).where(
-                    RightsUser.user_id == user.id, 
-                    RightsUser.group_id == Group.id
-                )
-            )
+            ~subquery.exists()
         )
         
         unauthorized_groups = db.session.execute(query).scalars().all()
