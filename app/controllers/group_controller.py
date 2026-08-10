@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import select, exists, delete
+from sqlalchemy import select, delete
 from ..models.group import Group
 from ..models.product import Product
 from ..models.user import User

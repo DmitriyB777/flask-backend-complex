@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy import select
 from ..models.user import User
 from ..models.token_block_list import TokenBlockList
 from ..extensions import db
@@ -14,8 +15,10 @@ def register():
 
         if not data or 'username' not in data or 'password' not in data:
             return jsonify({"error": "Bad Request"}), 400
+
+        query = select(User).filter_by(username=data['username'])
         
-        user = User.query.filter(User.username == data['username']).first()
+        user = db.session.execute(query).scalar_one_or_none()
 
         if user is not None:
             return jsonify({'error': 'User already exists'}), 409
@@ -27,8 +30,9 @@ def register():
         db.session.commit()
 
         return jsonify({'message': 'User was created'}), 201
-    except:
+    except Exception as e:
         db.session.rollback()
+        print(f"Error: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500
     
 @auth_controller.post('/login')
@@ -36,7 +40,9 @@ def login():
     try:
         data = request.get_json()
 
-        user = User.query.filter(User.username == data['username']).first()
+        query = select(User).filter_by(username=data['username'])
+                
+        user = db.session.execute(query).scalar_one_or_none()
 
         if user and check_password_hash(user.password, data['password']):
             token_access = create_access_token(user.username)
@@ -51,17 +57,22 @@ def login():
             }), 200
         
         return jsonify({'error': 'Invalid username or password'}), 400  
-    except:
+    except Exception as e:
+        print(f"Error: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500  
     
 @auth_controller.get('/refresh')
 @jwt_required(refresh=True)
 def refresh():
-    identity = get_jwt_identity()
+    try:
+        identity = get_jwt_identity()
 
-    access_token = create_access_token(identity=identity)
+        access_token = create_access_token(identity=identity)
 
-    return jsonify({'access_token': access_token})
+        return jsonify({'access_token': access_token})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'Internal Server Error'}), 500  
 
 @auth_controller.get('/logout')
 @jwt_required(verify_type=False)
@@ -80,6 +91,7 @@ def logout():
         db.session.commit()
 
         return jsonify({"message": f"{token_type} token revoked successfully"}), 200
-    except:
+    except Exception as e:
         db.session.rollback()
+        print(f"Error: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500  
