@@ -41,9 +41,8 @@ def add_group():
         
         parent = db.session.get(Group, data['parent_id'])
         
-        # Parent group not found
         if not parent and data['parent_id'] is not None:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Parent group not found"}), 404
 
         identity = get_jwt_identity()
         
@@ -53,6 +52,13 @@ def add_group():
         
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
+
+        query = select(RightsUser).filter_by(user_id=user.id, group_id=data['parent_id'])
+        
+        rights = db.session.execute(query).scalar_one_or_none()
+                
+        if not rights:
+            return jsonify({"error": "Forbidden"}), 403
 
         group = Group(name = data['name'], parent_id = data['parent_id'])
 
@@ -102,27 +108,28 @@ def update_group(id):
         if not rights:
             return jsonify({"error": "Forbidden"}), 403
         
-        if 'name' in data:
-            group.name = data['name']
-        
-        if 'parent_id' in data:
-
-            # A group cannot be its own parent
+        if 'parent_id' in data and 'name' in data:
             if data['parent_id'] == id:
-                return jsonify({"error": "Bad Request"}), 400
+                return jsonify({"error": "A group cannot be its own parent"}), 400
 
             parent = db.session.get(Group, data['parent_id'])
 
-            # Parent group not found
             if not parent and data['parent_id'] is not None:
-                return jsonify({"error": "Not found"}), 404
+                return jsonify({"error": "Parent group not found"}), 404
 
             descendants = get_all_descendant_groups(id) 
 
-            # Cannot move a group to one of its own descendants
             if data['parent_id'] in descendants:
-                return jsonify({"error": "Bad Request"}), 400
-            
+                return jsonify({"error": "Cannot move a group to one of its own descendants"}), 400
+
+            query = select(RightsUser).filter_by(user_id=user.id, group_id=data['parent_id'])
+                    
+            rights = db.session.execute(query).scalar_one_or_none()
+                            
+            if not rights:
+                return jsonify({"error": "Forbidden"}), 403
+
+            group.name = data['name']
             group.parent_id = data['parent_id']
         
         db.session.commit()
