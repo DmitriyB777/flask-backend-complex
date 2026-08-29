@@ -25,12 +25,12 @@ def get_products(group_id=None):
             return jsonify({"error": "Unauthorized"}), 401
 
         if group_id is None:
-            query = select(Product).join(RightsUser).filter(RightsUser.user_id == user.id)
+            query = select(Product).join(RightsUser, Product.group_id == RightsUser.group_id).filter(RightsUser.user_id == user.id)
             all_products = db.session.execute(query).scalars().all()
 
             return jsonify([{'id': p.id, 'name': p.name, 'group_id': p.group_id} for p in all_products])
 
-        query = select(Group).filter_by(group_id=group_id)
+        query = select(Group).filter_by(id=group_id)
         group = db.session.execute(query).scalar_one_or_none()
 
         if not group:
@@ -42,11 +42,9 @@ def get_products(group_id=None):
         if not group:
             return jsonify({"error": "Forbidden"}), 403
 
-        # query = select(Product).filter_by(group_id=group_id)
-        query = select(Product).join(RightsUser).filter(RightsUser.user_id == user.id, RightsUser.group_id == group_id)
+        query = select(Product).join(RightsUser, Product.group_id == RightsUser.group_id).filter(RightsUser.user_id == user.id, RightsUser.group_id == group_id)
         products = db.session.execute(query).scalars().all()
 
-        # query = select(Group).filter_by(parent_id=group_id)
         query = select(Group).join(RightsUser).filter(RightsUser.user_id == user.id, Group.parent_id == group_id)
         sub_groups = db.session.execute(query).scalars().all()
 

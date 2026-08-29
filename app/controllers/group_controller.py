@@ -57,7 +57,7 @@ def add_group():
         
         rights = db.session.execute(query).scalar_one_or_none()
                 
-        if not rights:
+        if not rights and data['parent_id'] is not None:
             return jsonify({"error": "Forbidden"}), 403
 
         group = Group(name = data['name'], parent_id = data['parent_id'])
@@ -126,7 +126,7 @@ def update_group(id):
                     
             rights = db.session.execute(query).scalar_one_or_none()
                             
-            if not rights:
+            if not rights and data['parent_id'] is not None:
                 return jsonify({"error": "Forbidden"}), 403
 
             group.name = data['name']
