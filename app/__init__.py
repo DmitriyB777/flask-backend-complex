@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from config import Config
 from .extensions import db, migrate, jwt
+from .commands.import_csv_command import import_csv_command
 from .controllers.auth_controller import auth_controller
 from .controllers.group_controller import group_controller
 from .controllers.product_controller import product_controller
@@ -21,6 +22,9 @@ def create_app():
 
     # init jwt
     jwt.init_app(app)
+
+    # add commands
+    app.cli.add_command(import_csv_command)
 
     # add controllers
     app.register_blueprint(auth_controller, url_prefix='/api')
