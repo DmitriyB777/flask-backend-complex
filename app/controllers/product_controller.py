@@ -68,7 +68,7 @@ def get_products(group_id=None):
         if products or sub_groups:
             return jsonify(data)
         else:
-            return jsonify({'message': 'No products or sub-groups found for this region'}), 404
+            return jsonify({'message': 'No products or sub-groups found for this group'}), 404
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'error': 'Internal Server Error'}), 500
