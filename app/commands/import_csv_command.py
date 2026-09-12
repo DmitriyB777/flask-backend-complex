@@ -62,9 +62,10 @@ def import_csv_command(file_path, user_name, chunk_size):
                         new_rights = RightsUser(user_id = user.id, group_id = new_group.id)
                         
                         db.session.add(new_rights)
-
-                new_product = Product(name=str(product_name).strip(), group_id=current_parent_id)
-                db.session.add(new_product)
+                
+                if pd.notna(product_name):
+                    new_product = Product(name=str(product_name).strip(), group_id=current_parent_id)
+                    db.session.add(new_product)
 
             db.session.commit()
             click.echo(f"✅ Chunk {i+1} committed.")
